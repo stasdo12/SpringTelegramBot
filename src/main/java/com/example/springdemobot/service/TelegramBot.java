@@ -1,11 +1,13 @@
 package com.example.springdemobot.service;
 
 import com.example.springdemobot.config.BotConfig;
+import com.example.springdemobot.controller.MainController;
 import com.example.springdemobot.model.User;
 import com.example.springdemobot.model.UserRepo;
 import com.vdurmont.emoji.EmojiParser;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
@@ -16,7 +18,6 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
@@ -26,11 +27,14 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.example.springdemobot.controller.MainController.checkKeywords;
+
 @Slf4j
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
     @Autowired
     private UserRepo userRepo;
+
 
    final BotConfig config;
 
@@ -194,13 +198,32 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     }
 
+
     private void startCommandReceived(long chatId, String firstName){
 
         String answer = EmojiParser.parseToUnicode("Hi, " + firstName + ", nice to meet you!!" + ":blush:");
-//            String answer = "Hi, " + firstName + ", nice to meet you!!";
-            log.info("Replied to user " + firstName);
+        String bybitKeyword1 = checkKeywords("Dual Asset 2.0: BCH Now Supported!", "");
+        String bybitKeyword2 = checkKeywords("ByVotes Chapter 15: The Results Are In!", "");
 
-            sendMessage(chatId, answer);
+        log.info("Replied to user " + firstName);
+
+        sendMessage(chatId, answer);
+        sendMessage(chatId, bybitKeyword1);
+        sendMessage(chatId, bybitKeyword2);
+
+    }
+
+    @Scheduled(fixedRate = 6000000)
+    public void sendPeriodMassage(){
+        List<User> users = (List<User>) userRepo.findAll();
+        String bybitKeyword1 = checkKeywords("Dual Asset 2.0: BCH Now Supported!", "");
+        String bybitKeyword2 = checkKeywords("ByVotes Chapter 15: The Results Are In!", "");
+        for (User user :users){
+            String chatId = String.valueOf(user.getChatId());
+            sendMessage(Long.parseLong(chatId), bybitKeyword1);
+            sendMessage(Long.parseLong(chatId), bybitKeyword2);
+        }
+
 
     }
     private void sendMessage(long chatId, String textToSend)  {
